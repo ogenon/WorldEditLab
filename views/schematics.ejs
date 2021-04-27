@@ -10,17 +10,20 @@
 
 <div class="container mx-auto py-6">
     <h1 class="text-3xl py-4 border-b mb-10">Schematics</h1>
-    <% if (header.username) { %>
-        <div class="mb-4 flex justify-between items-center">
-            <div class="schematic-quick-actions"></div>
-            <div>
-                <button class="rounded-lg inline-flex items-center bg-green-600 text-white hover:bg-green-700 py-2 px-2 md:px-4"
-                        onclick="WEL.schematics.create(schematicCategories)">
-                    <span>Upload</span>
-                </button>
-            </div>
-        </div>
-    <% } %>
+    <div class="mb-4 flex justify-between items-center">
+      <div class="schematic-quick-actions"></div>
+      <div>
+        <span class="searchbar">
+          <input type="text" />
+          <i class="fas fa-search"></i>
+        </span>
+        <% if (header.username) { %>
+          <button class="ml-4 rounded-lg inline-flex items-center bg-green-600 text-white hover:bg-green-700 py-2 px-2 md:px-4" onclick="WEL.schematics.create(schematicCategories)">
+            <span>Upload</span>
+          </button>
+        <% } %>
+      </div>
+    </div>
     <div id="schematic-collection" class="collection-table"></div>
     <% if (header.username) { %><span class="text-xs">Just drop your Schematic on the table to upload it</span><% } %>
     <script>
@@ -32,6 +35,7 @@
 
         collectionSchematic = WEL.newCollection('#schematic-collection', 'table', {
           rowKey: 'uuid',
+          noDataMessage: 'No schematics found. You can sign up and upload your own schematics.',
           columns: [
             {title: 'Name', key: 'name'},
             {
@@ -115,7 +119,7 @@
             selector: '.schematic-quick-actions',
             actions: [
               {
-                title: 'Delete',
+                title: 'Delete all selected schematics',
                 icon: 'fas fa-trash-alt',
                 click: function (rows) {
                   var filteredRows = [];
@@ -133,7 +137,7 @@
                 },
               },
               {
-                title: 'Public',
+                title: "Mark all selected schematics as public.",
                 icon: 'fas fa-unlock',
                 click: function (rows) {
                   var filteredRows = [];
@@ -151,7 +155,7 @@
                 },
               },
               {
-                title: 'Internal',
+                title: "Set selected schematics to internal usage only.",
                 icon: 'fas fa-unlock-alt',
                 click: function (rows) {
                   var filteredRows = [];
@@ -169,7 +173,7 @@
                 },
               },
               {
-                title: 'Private',
+                title: "Set selected schematics to private.",
                 icon: 'fas fa-lock',
                 click: function (rows) {
                   var filteredRows = [];
@@ -190,6 +194,19 @@
           },
             <% } %>
         });
+
+        const searchBar = document.querySelector(".searchbar");
+        if(searchBar) {
+          searchBar.addEventListener("keyup", (e) => {
+            e.preventDefault();
+            
+            if(collectionSchematic) {
+              const value = e.target.value;
+              collectionSchematic.applyFilter(value);
+            }
+          });
+        }
+
           <% if (header.username) { %>
         WEL.schematics.dragDrop(collectionSchematic.dom, schematicCategories);
           <% } %>

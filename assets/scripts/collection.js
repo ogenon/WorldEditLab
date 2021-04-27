@@ -72,11 +72,24 @@ const createDOM = (collection) => {
     collection.dom = tableDOM;
     collection.head = theadDOM;
     collection.body = tbodyDOM;
+
+    const emptyDOM = document.createElement('td');
+    emptyDOM.id = "empty-dom";
+    emptyDOM.colSpan = 7;
+    emptyDOM.style.textAlign = 'center';
+    emptyDOM.style.padding = '10px';
+    emptyDOM.innerHTML = collection.noDataMessage;
+    collection.emptyElement = emptyDOM;
   } else if (collection.type === GRID) {
     const gridBody = document.createElement('div');
     gridBody.className = 'card-wrapper';
     collection.dom = gridBody;
     collection.body = gridBody;
+
+    const emptyDOM = document.createElement('div');
+    emptyDOM.id = "empty-dom";
+    emptyDOM.innerHTML = collection.noDataMessage;
+    collection.emptyElement = emptyDOM;
   }
 };
 
@@ -168,7 +181,9 @@ export const newCollection = (selector, type, setup) => {
     data: [],
     selectedCount: 0,
     rowCount: 0,
+    noDataMessage: setup.noDataMessage ?? "No data available."
   };
+  
   registerMassActions(collection, setup);
   createDOM(collection);
 
@@ -184,16 +199,48 @@ export const newCollection = (selector, type, setup) => {
     collection.dom.addEventListener('click', setup.clickHandler);
   }
 
-  const render = () => {
+  const hasData = () => {
+    return collection.data.length > 0;
+  }
+
+  const areSomeVisible = () => {
+    if(!hasData()) {
+      return false;
+    }
+
+    return collection.data.some((row) => row.visible);
+  }
+
+  const clearDOM = () => {
     const box = document.querySelector(selector);
     collection.body.innerHTML = '';
     box.append(collection.dom);
+  }
 
-    collection.data.forEach((row) => {
-      if (row.visible) {
-        collection.body.append(row.dom);
-      }
-    });
+  const removeEmptyDOMIfExists = () => {
+    const selection = document.querySelector('#empty-dom');
+    selection?.parentElement?.removeChild(selection);
+  }
+
+  const appendEmptyDOM = () => {
+    collection.body.append(collection.emptyElement);
+  }
+
+  const render = () => {
+    clearDOM();
+
+    if(areSomeVisible()) {
+      collection.data.forEach((row) => {
+        if (row.visible) {
+          collection.body.append(row.dom);
+        }
+      });
+      return;
+    }
+
+    if(!hasData()) {
+      appendEmptyDOM();
+    }
   };
 
   const setData = (data) => {
@@ -212,6 +259,10 @@ export const newCollection = (selector, type, setup) => {
         item.remove();
       }
     });
+
+    if(collection.rowCount === 0) {
+      appendEmptyDOM();
+    }
   };
 
   const addItem = (row) => {
@@ -219,6 +270,10 @@ export const newCollection = (selector, type, setup) => {
     const newItem = createItem(collection, setup, row);
     collection.data.push(newItem);
     collection.body.append(newItem.dom);
+
+    if(hasData()) { 
+      removeEmptyDOMIfExists();
+    }
   };
 
   const updateItem = (item) => {
@@ -238,7 +293,23 @@ export const newCollection = (selector, type, setup) => {
     });
   };
 
+  const applyFilter = (filterStr) => {
+    const multiWhitespacesRgx = new RegExp(/\s+/g);
+    filterStr = filterStr || "";
+    const cleanFilterStr = filterStr.trim().replace(multiWhitespacesRgx).toLowerCase();
+
+    collection.data.forEach((element) => {
+      const row = element.row;
+      const cleanName = row.name.trim().replace(multiWhitespacesRgx).toLowerCase();
+
+      element.visible = cleanName.includes(cleanFilterStr);
+    });
+
+    render();
+  }
+
   return {
+    applyFilter,
     setData,
     updateItem,
     deleteItem,

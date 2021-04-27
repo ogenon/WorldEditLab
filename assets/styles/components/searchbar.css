@@ -1,0 +1,7 @@
+.searchbar {
+  @apply border-solid border border-gray-300 p-2 rounded-lg;
+}
+
+.searchbar input {
+  @apply border-none no-underline focus:outline-none;
+}
